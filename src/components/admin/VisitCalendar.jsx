@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 
 const VisitCalendar = ({ tickets, serviceRequests, onEventSelect }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -67,7 +67,11 @@ const VisitCalendar = ({ tickets, serviceRequests, onEventSelect }) => {
     const visits = visitDates.get(date.toDateString()) || [];
     return {
       hasTickets: visits.some(v => v.type === "ticket"),
-      hasServices: visits.some(v => v.type === "service-request")
+      hasServices: visits.some(v => v.type === "service-request"),
+      allCompleted: visits.length > 0 && visits.every(v => 
+        (v.type === "ticket" && v.status === "Closed") || 
+        (v.type === "service-request" && v.status === "Completed")
+      )
     };
   };
 
@@ -176,6 +180,11 @@ const VisitCalendar = ({ tickets, serviceRequests, onEventSelect }) => {
                   )}
                   {visitTypes.hasServices && (
                     <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-500"></div>
+                  )}
+                  {visitTypes.allCompleted && (
+                    <div className="absolute -top-[2px] -right-[2px] bg-green-500 rounded-full p-[1px]">
+                      <Check className="w-2 h-2 text-white" />
+                    </div>
                   )}
                 </div>
               )}

@@ -1011,7 +1011,7 @@ const AdminPortal = () => {
                       <h2 className="text-xl font-bold text-slate-900">
                         Visit Details
                       </h2>
-                      {selectedVisit && (
+                      {selectedVisit && selectedVisit.visits && selectedVisit.visits.length > 0 && (
                         <button
                           type="button"
                           onClick={() => setSelectedVisit(null)}
@@ -1042,10 +1042,17 @@ const AdminPortal = () => {
                             {selectedVisit.visits.map((visit, index) => (
                               <div
                                 key={index}
-                                className={`p-4 rounded-lg border ${
+                                onClick={() => {
+                                  if (visit.type === 'ticket') {
+                                    handleTicketClick({ _id: visit._id, ...visit });
+                                  } else {
+                                    handleServiceRequestClick({ _id: visit._id, ...visit });
+                                  }
+                                }}
+                                className={`p-4 rounded-lg border cursor-pointer hover:shadow-md transition-all ${
                                   visit.type === "ticket"
-                                    ? "bg-blue-100 border-blue-300/80"
-                                    : "bg-fuchsia-100 border-fuchsia-300/80"
+                                    ? "bg-blue-100 border-blue-300/80 hover:bg-blue-200"
+                                    : "bg-fuchsia-100 border-fuchsia-300/80 hover:bg-fuchsia-200"
                                 }`}
                               >
                                 <div className="flex justify-between items-start mb-2">

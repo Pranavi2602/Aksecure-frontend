@@ -1,4 +1,4 @@
-import { Shield, MessageSquare } from 'lucide-react';
+import { Shield, MessageSquare, Trash2 } from 'lucide-react';
 import TicketHeader from './TicketHeader';
 import UserInfo from './UserInfo';
 import ImageGallery from './ImageGallery';
@@ -21,7 +21,8 @@ const TicketDetailsPanel = ({
   onAddComment,
   showReplyModal,
   setShowReplyModal,
-  onReply
+  onReply,
+  onDelete
 }) => {
   if (!ticket) {
     return (
@@ -43,8 +44,8 @@ const TicketDetailsPanel = ({
     <>
       <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-slate-50/30">
         <div className="p-6 space-y-6">
-          {/* Reply Button */}
-          <div className="flex justify-end mb-2">
+          {/* Reply and Delete Buttons */}
+          <div className="flex justify-end gap-3 mb-2">
             <button
               onClick={() => setShowReplyModal(true)}
               className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md hover:shadow-lg"
@@ -52,6 +53,15 @@ const TicketDetailsPanel = ({
               <MessageSquare className="w-5 h-5" />
               Reply to User
             </button>
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="inline-flex items-center gap-2 px-5 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-semibold shadow-md hover:shadow-lg"
+              >
+                <Trash2 className="w-5 h-5" />
+                Delete Ticket
+              </button>
+            )}
           </div>
 
           <TicketHeader 

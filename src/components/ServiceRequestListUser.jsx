@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { X, Eye, Loader2 } from 'lucide-react';
+import { X, Eye, Loader2, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
+import { toast } from 'react-toastify';
 
 const statusStyles = {
   'New': 'bg-emerald-50 text-emerald-700',
@@ -20,6 +21,9 @@ const ServiceRequestListUser = ({ onRefresh }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [requestToDelete, setRequestToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const observer = useRef();
   const lastRequestRef = useCallback(node => {
     if (loading) return;
@@ -44,16 +48,16 @@ const ServiceRequestListUser = ({ onRefresh }) => {
 
       const currentPage = isLoadMore ? page + 1 : 1;
       const response = await api.get(`/service-requests?page=${currentPage}&limit=10`);
-      
+
       const newRequests = Array.isArray(response.data?.requests) ? response.data.requests : [];
-      
-      setRequests(prevRequests => 
+
+      setRequests(prevRequests =>
         isLoadMore ? [...prevRequests, ...newRequests] : newRequests
       );
-      
+
       setHasMore(response.data?.hasMore || false);
       setError('');
-      
+
       if (isLoadMore) {
         setPage(currentPage);
       } else {
@@ -83,7 +87,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
       const interval = setInterval(() => {
         fetchRequests(false);
       }, 30000);
-      
+
       return () => clearInterval(interval);
     }
   }, [fetchRequests]);
@@ -101,7 +105,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     return (
       <div className="text-center py-8 text-red-600">
         {error}
-        <button 
+        <button
           onClick={() => fetchRequests(false)}
           className="ml-2 px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
         >
@@ -142,6 +146,27 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     };
   };
 
+  const handleDeleteRequest = async () => {
+    if (!requestToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/service-requests/${requestToDelete._id}`);
+      // Remove the deleted request from the list
+      setRequests(prevRequests =>
+        prevRequests.filter(req => req._id !== requestToDelete._id)
+      );
+      toast.success('Service request deleted successfully');
+      setShowDeleteModal(false);
+      setRequestToDelete(null);
+    } catch (err) {
+      console.error('Error deleting service request:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete service request');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {requests.map((request, index) => {
@@ -150,8 +175,8 @@ const ServiceRequestListUser = ({ onRefresh }) => {
 
         const isLastRequest = index === requests.length - 1;
         return (
-          <div 
-            key={request._id} 
+          <div
+            key={request._id}
             ref={isLastRequest && hasMore ? lastRequestRef : null}
             className="bg-white rounded-lg shadow-md p-6 ring-2 ring-purple-400"
           >
@@ -168,9 +193,24 @@ const ServiceRequestListUser = ({ onRefresh }) => {
                 </div>
                 <p className="text-sm text-gray-600">Service ID: {request.requestId}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[request.status] || 'bg-slate-100 text-slate-700'}`}>
-                {request.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[request.status] || 'bg-slate-100 text-slate-700'}`}>
+                  {request.status}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Delete button clicked for request:', request._id);
+                    setRequestToDelete(request);
+                    setShowDeleteModal(true);
+                  }}
+                  className="relative z-10 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+                  title="Delete request"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <p className="text-gray-700 mb-4">{request.description}</p>
@@ -220,32 +260,56 @@ const ServiceRequestListUser = ({ onRefresh }) => {
             {request.timeline && request.timeline.length > 0 && (() => {
               const adminReplies = request.timeline.filter(item => isAdminReply(item));
               if (adminReplies.length === 0) return null;
-              
+
               return (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <p className="text-sm font-medium text-gray-700 mb-2">Admin Replies:</p>
                   <div className="space-y-2">
-                    {adminReplies.map((item, index) => (
-                      <div
-                        key={index}
-                        className="text-sm p-3 rounded-lg bg-purple-50 border border-purple-200"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-purple-900">
-                            {item.addedBy}
-                          </span>
-                          <span className="text-xs px-2 py-0.5 bg-purple-200 text-purple-800 rounded-full font-medium">
-                            Admin
+                    {adminReplies.map((item, index) => {
+                      const images = item.images || [];
+                      return (
+                        <div
+                          key={index}
+                          className="text-sm p-3 rounded-lg bg-purple-50 border border-purple-200"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-purple-900">
+                              {item.addedBy}
+                            </span>
+                            <span className="text-xs px-2 py-0.5 bg-purple-200 text-purple-800 rounded-full font-medium">
+                              Admin
+                            </span>
+                          </div>
+                          <p className="text-purple-800 mb-2">
+                            {item.note}
+                          </p>
+                          {images.length > 0 && (
+                            <div className="mt-2 grid grid-cols-3 gap-2">
+                              {images.map((image, imgIndex) => {
+                                const imageUrl = image.startsWith('http')
+                                  ? image
+                                  : `${baseUrl}${image}`;
+                                return (
+                                  <img
+                                    key={imgIndex}
+                                    src={imageUrl}
+                                    alt={`Admin attachment ${imgIndex + 1}`}
+                                    className="w-full h-20 object-cover rounded-lg border-2 border-purple-200 cursor-pointer hover:border-purple-400 transition-all"
+                                    onClick={() => {
+                                      const allImageUrls = images.map(img => img.startsWith('http') ? img : `${baseUrl}${img}`);
+                                      setSelectedImage({ url: imageUrl, index: imgIndex, allImages: allImageUrls });
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          )}
+                          <span className="text-xs mt-2 block text-purple-600">
+                            {new Date(item.addedAt).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-purple-800">
-                          {item.note}
-                        </p>
-                        <span className="text-xs mt-1 block text-purple-600">
-                          {new Date(item.addedAt).toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -255,7 +319,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
       })}
 
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
@@ -276,16 +340,69 @@ const ServiceRequestListUser = ({ onRefresh }) => {
           </div>
         </div>
       )}
-      
+
       {isRefreshing && (
         <div className="flex justify-center py-4">
           <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
         </div>
       )}
-      
+
       {!hasMore && requests.length > 0 && (
         <div className="text-center py-4 text-sm text-gray-500">
           No more requests to load
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && requestToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Delete Service Request</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  Are you sure you want to delete service request <span className="font-semibold">{requestToDelete.requestId}</span>?
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setRequestToDelete(null);
+                }}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+              This action cannot be undone. All data associated with this request will be permanently removed.
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setRequestToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteRequest}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Request'
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

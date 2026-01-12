@@ -89,6 +89,10 @@ const AdminPortal = () => {
   const [deletingUserId, setDeletingUserId] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [ticketToDelete, setTicketToDelete] = useState(null);
+  const [serviceRequestToDelete, setServiceRequestToDelete] = useState(null);
+  const [deleteTicketModalOpen, setDeleteTicketModalOpen] = useState(false);
+  const [deleteServiceRequestModalOpen, setDeleteServiceRequestModalOpen] = useState(false);
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [showServiceRequestReplyModal, setShowServiceRequestReplyModal] =
     useState(false);
@@ -263,6 +267,44 @@ const AdminPortal = () => {
       console.error(err);
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!ticketToDelete) return;
+    try {
+      await api.delete(`/tickets/${ticketToDelete._id}`);
+      await fetchTickets();
+      if (selectedTicket?._id === ticketToDelete._id) {
+        setSelectedTicket(null);
+      }
+      setDeleteTicketModalOpen(false);
+      setTicketToDelete(null);
+    } catch (err) {
+      alert(
+        "Failed to delete ticket: " +
+          (err.response?.data?.message || "Unknown error")
+      );
+      console.error(err);
+    }
+  };
+
+  const handleDeleteServiceRequest = async () => {
+    if (!serviceRequestToDelete) return;
+    try {
+      await api.delete(`/service-requests/${serviceRequestToDelete._id}`);
+      await fetchServiceRequests();
+      if (selectedServiceRequest?._id === serviceRequestToDelete._id) {
+        setSelectedServiceRequest(null);
+      }
+      setDeleteServiceRequestModalOpen(false);
+      setServiceRequestToDelete(null);
+    } catch (err) {
+      alert(
+        "Failed to delete service request: " +
+          (err.response?.data?.message || "Unknown error")
+      );
+      console.error(err);
     }
   };
 
@@ -481,7 +523,7 @@ const AdminPortal = () => {
     }
   };
 
-  const handleReply = async (replyMessage, visitDateTime) => {
+  const handleReply = async (replyMessage, visitDateTime, images = []) => {
     if (!selectedTicket) return false;
 
     try {
@@ -498,9 +540,20 @@ const AdminPortal = () => {
         promises.push(api.put(`/tickets/${selectedTicket._id}`, updateData));
       }
 
+      // Create FormData for comment with images
+      const formData = new FormData();
+      formData.append('note', replyMessage);
+      if (images && images.length > 0) {
+        images.forEach((image) => {
+          formData.append('images', image);
+        });
+      }
+
       promises.push(
-        api.post(`/tickets/${selectedTicket._id}/comments`, {
-          note: replyMessage,
+        api.post(`/tickets/${selectedTicket._id}/comments`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         })
       );
 
@@ -657,7 +710,7 @@ const AdminPortal = () => {
     }
   };
 
-  const handleServiceRequestReply = async (replyMessage, visitDateTime) => {
+  const handleServiceRequestReply = async (replyMessage, visitDateTime, images = []) => {
     if (!selectedServiceRequest) return false;
 
     try {
@@ -676,9 +729,20 @@ const AdminPortal = () => {
         );
       }
 
+      // Create FormData for comment with images
+      const formData = new FormData();
+      formData.append('note', replyMessage);
+      if (images && images.length > 0) {
+        images.forEach((image) => {
+          formData.append('images', image);
+        });
+      }
+
       promises.push(
-        api.post(`/service-requests/${selectedServiceRequest._id}/comments`, {
-          note: replyMessage,
+        api.post(`/service-requests/${selectedServiceRequest._id}/comments`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         })
       );
 
@@ -1233,6 +1297,10 @@ const AdminPortal = () => {
                       setViewMode("dashboard");
                       setActiveTab("tickets");
                     }}
+                    onDelete={(ticket) => {
+                      setTicketToDelete(ticket);
+                      setDeleteTicketModalOpen(true);
+                    }}
                   />
                 </div>
               </div>
@@ -1502,6 +1570,10 @@ const AdminPortal = () => {
                       setViewMode("dashboard");
                       setActiveTab("tickets");
                     }}
+                    onDelete={(request) => {
+                      setServiceRequestToDelete(request);
+                      setDeleteServiceRequestModalOpen(true);
+                    }}
                   />
                 </div>
               </div>
@@ -1524,6 +1596,10 @@ const AdminPortal = () => {
                     showReplyModal={showServiceRequestReplyModal}
                     setShowReplyModal={setShowServiceRequestReplyModal}
                     onReply={handleServiceRequestReply}
+                    onDelete={() => {
+                      setServiceRequestToDelete(selectedServiceRequest);
+                      setDeleteServiceRequestModalOpen(true);
+                    }}
                   />
                 ) : (
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 m-6 flex items-center justify-center h-full">
@@ -1592,6 +1668,100 @@ const AdminPortal = () => {
                 ) : (
                   <>Delete</>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTicketModalOpen && ticketToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Delete Ticket
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  This will permanently delete ticket{" "}
+                  <span className="font-semibold">{ticketToDelete.ticketId}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setDeleteTicketModalOpen(false);
+                  setTicketToDelete(null);
+                }}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+              This action cannot be undone. All ticket data, images, and timeline will be permanently removed.
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDeleteTicketModalOpen(false);
+                  setTicketToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTicket}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors inline-flex items-center gap-2"
+              >
+                Delete Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteServiceRequestModalOpen && serviceRequestToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Delete Service Request
+                </h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  This will permanently delete service request{" "}
+                  <span className="font-semibold">{serviceRequestToDelete.requestId}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setDeleteServiceRequestModalOpen(false);
+                  setServiceRequestToDelete(null);
+                }}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+              This action cannot be undone. All service request data, images, and timeline will be permanently removed.
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDeleteServiceRequestModalOpen(false);
+                  setServiceRequestToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteServiceRequest}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors inline-flex items-center gap-2"
+              >
+                Delete Service Request
               </button>
             </div>
           </div>

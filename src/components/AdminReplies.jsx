@@ -22,8 +22,9 @@ const AdminReplies = ({ refreshKey = 0 }) => {
         api.get('/tickets'),
         api.get('/service-requests')
       ]);
-      const tickets = ticketsResponse.data;
-      const serviceRequests = serviceRequestsResponse.data;
+      const tickets = Array.isArray(ticketsResponse.data) ? ticketsResponse.data : (ticketsResponse.data?.tickets || []);
+      const serviceRequestsData = serviceRequestsResponse.data;
+      const serviceRequests = Array.isArray(serviceRequestsData) ? serviceRequestsData : (serviceRequestsData?.requests || []);
       
       const unseenReplies = [];
       const userId = user?._id || user?.id;

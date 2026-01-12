@@ -45,8 +45,8 @@ const ServiceRequestDetailsPanel = ({
     <>
       <div className="flex-1 overflow-y-auto bg-gradient-to-b from-white to-slate-50/30">
         <div className="p-6 space-y-6">
-          {/* Reply Button */}
-          <div className="flex justify-end mb-2">
+          {/* Reply and Delete Buttons */}
+          <div className="flex justify-end gap-3 mb-2">
             <button
               onClick={() => setShowReplyModal(true)}
               className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md hover:shadow-lg"
@@ -54,6 +54,7 @@ const ServiceRequestDetailsPanel = ({
               <MessageSquare className="w-5 h-5" />
               Reply to User
             </button>
+
           </div>
 
           {/* Service Request Header */}
@@ -65,12 +66,11 @@ const ServiceRequestDetailsPanel = ({
                     {serviceRequest.title}
                   </h2>
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ring-2 ${
-                      serviceRequest.status === 'New' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100' :
-                      serviceRequest.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200 ring-blue-100' :
-                      serviceRequest.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200 ring-green-100' :
-                      'bg-slate-50 text-slate-700 border-slate-200 ring-slate-100'
-                    }`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border ring-2 ${serviceRequest.status === 'New' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100' :
+                        serviceRequest.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200 ring-blue-100' :
+                          serviceRequest.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200 ring-green-100' :
+                            'bg-slate-50 text-slate-700 border-slate-200 ring-slate-100'
+                      }`}
                   >
                     {serviceRequest.status}
                   </span>
@@ -106,11 +106,10 @@ const ServiceRequestDetailsPanel = ({
                             setUpdateStatus(e.target.value);
                             setErrors(prev => ({ ...prev, status: '', update: '' }));
                           }}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent text-sm ${
-                            errors.status || errors.update
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent text-sm ${errors.status || errors.update
                               ? 'border-red-300 focus:ring-red-500 bg-red-50'
                               : 'border-slate-300 focus:ring-slate-500 bg-white'
-                          }`}
+                            }`}
                         >
                           {serviceRequestStatusOptions.map((status) => (
                             <option key={status} value={status}>

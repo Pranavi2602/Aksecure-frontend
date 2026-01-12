@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Send, Clock, MessageSquare, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, Send, Clock, MessageSquare, Loader2, Image as ImageIcon, XCircle } from 'lucide-react';
 
 const timeSlotOptions = [
   { value: '09:00', label: 'Morning (9 AM – 12 PM)' },
@@ -12,11 +12,51 @@ const ReplyModal = ({ isOpen, onClose, ticket, onReply, updating }) => {
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredSlot, setPreferredSlot] = useState('');
   const [errors, setErrors] = useState({ message: '', schedule: '' });
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const fileInputRef = useRef(null);
 
   // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date().toISOString().split('T')[0];
 
   if (!isOpen) return null;
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = files.filter(file => {
+      const isValidType = file.type.startsWith('image/');
+      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+      return isValidType && isValidSize;
+    });
+
+    if (validFiles.length + selectedImages.length > 3) {
+      setErrors(prev => ({ ...prev, message: 'Maximum 3 images allowed' }));
+      return;
+    }
+
+    const newImages = [...selectedImages, ...validFiles];
+    setSelectedImages(newImages);
+
+    // Create previews
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    
+    // Revoke object URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setSelectedImages(newImages);
+    setImagePreviews(newPreviews);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,12 +89,17 @@ const ReplyModal = ({ isOpen, onClose, ticket, onReply, updating }) => {
 
     // Call the parent handler and wait for result
     try {
-      const success = await onReply(replyMessage.trim(), visitDateTimeIso);
+      const success = await onReply(replyMessage.trim(), visitDateTimeIso, selectedImages);
       
       if (success !== false) {
+        // Clean up preview URLs
+        imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        
         setReplyMessage('');
         setPreferredDate('');
         setPreferredSlot('');
+        setSelectedImages([]);
+        setImagePreviews([]);
         setErrors({ message: '', schedule: '' });
         onClose();
       }
@@ -65,9 +110,14 @@ const ReplyModal = ({ isOpen, onClose, ticket, onReply, updating }) => {
 
   const handleClose = () => {
     if (!updating) {
+      // Clean up preview URLs
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+      
       setReplyMessage('');
       setPreferredDate('');
       setPreferredSlot('');
+      setSelectedImages([]);
+      setImagePreviews([]);
       setErrors({ message: '', schedule: '' });
       onClose();
     }
@@ -133,6 +183,62 @@ const ReplyModal = ({ isOpen, onClose, ticket, onReply, updating }) => {
             />
             {errors.message && (
               <p className="mt-1 text-sm text-red-600">{errors.message}</p>
+            )}
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <ImageIcon className="inline w-4 h-4 mr-1" />
+              Attach Images (Optional)
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              disabled={updating || selectedImages.length >= 3}
+              className="hidden"
+              id="image-upload"
+            />
+            <label
+              htmlFor="image-upload"
+              className={`inline-flex items-center gap-2 px-4 py-2 border rounded-xl cursor-pointer transition-colors font-medium ${
+                updating || selectedImages.length >= 3
+                  ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              {selectedImages.length >= 3 ? 'Maximum 3 images' : 'Select Images'}
+            </label>
+            <p className="mt-1 text-xs text-slate-500">You can attach up to 3 images (max 5MB each)</p>
+
+            {/* Image Previews */}
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border-2 border-slate-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      disabled={updating}
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                    <p className="mt-1 text-xs text-slate-500 truncate">
+                      {selectedImages[index].name}
+                    </p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
@@ -227,4 +333,3 @@ const ReplyModal = ({ isOpen, onClose, ticket, onReply, updating }) => {
 };
 
 export default ReplyModal;
-

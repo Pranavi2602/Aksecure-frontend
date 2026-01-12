@@ -1,6 +1,7 @@
-import { Filter, AlertCircle, Calendar, Eye, X, Home } from 'lucide-react';
+import { Filter, AlertCircle, Calendar, Eye, X, Home, Trash2 } from 'lucide-react';
 import { getStatusColor, getStatusIcon, getCategoryColor } from './utils.jsx';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 const serviceRequestStatusOptions = ['New', 'In Progress', 'Completed'];
 
@@ -14,7 +15,8 @@ const ServiceRequestListPanel = ({
   onServiceRequestClick,
   error,
   onBackToDashboard,
-  onRefresh
+  onRefresh,
+  onDelete
 }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const filteredServiceRequests = serviceRequests.filter((request) => {
@@ -25,6 +27,14 @@ const ServiceRequestListPanel = ({
     const matchesStatus = statusFilter === 'All' || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Handle delete button click
+  const handleDeleteClick = (e, request) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(request);
+    }
+  };
 
   const stats = {
     total: serviceRequests.length,
@@ -64,7 +74,7 @@ const ServiceRequestListPanel = ({
             </span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200 rounded-lg p-2">
             <div className="flex items-center gap-1 mb-1">
@@ -88,7 +98,7 @@ const ServiceRequestListPanel = ({
             <p className="text-base font-bold text-green-900">{stats.completed}</p>
           </div>
         </div>
-        
+
         <div className="mt-3">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-slate-500 flex-shrink-0" />
@@ -106,7 +116,7 @@ const ServiceRequestListPanel = ({
             </select>
           </div>
         </div>
-        
+
         <div className="mt-2 text-xs text-slate-500 font-medium">
           {filteredServiceRequests.length} request{filteredServiceRequests.length !== 1 ? 's' : ''} found
         </div>
@@ -118,7 +128,7 @@ const ServiceRequestListPanel = ({
             {error}
           </div>
         )}
-        
+
         {filteredServiceRequests.length === 0 ? (
           <div className="text-center py-12 px-4">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 flex items-center justify-center">
@@ -140,11 +150,10 @@ const ServiceRequestListPanel = ({
             <button
               key={request._id}
               onClick={() => onServiceRequestClick(request)}
-              className={`w-full text-left p-3 rounded-lg border transition-all group ${
-                selectedServiceRequest?._id === request._id
-                  ? 'border-slate-500 bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-md'
-                  : 'border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm'
-              }`}
+              className={`w-full text-left p-3 rounded-lg border transition-all group ${selectedServiceRequest?._id === request._id
+                ? 'border-slate-500 bg-gradient-to-br from-slate-50 to-slate-100/50 shadow-md'
+                : 'border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm'
+                }`}
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
@@ -158,27 +167,35 @@ const ServiceRequestListPanel = ({
                   </h3>
                   <p className="text-xs font-mono text-slate-600">{request.requestId}</p>
                 </div>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border flex-shrink-0 ${
-                    request.status === 'New' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                    request.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    request.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200' :
-                    'bg-slate-50 text-slate-700 border-slate-200'
-                  }`}
-                >
-                  {request.status}
-                </span>
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${request.status === 'New' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      request.status === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        request.status === 'Completed' ? 'bg-green-50 text-green-700 border-green-200' :
+                          'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}
+                  >
+                    {request.status}
+                  </span>
+                  <button
+                    onClick={(e) => handleDeleteClick(e, request)}
+                    className="p-1 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete service request"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-slate-600 line-clamp-2 mb-2 leading-relaxed">
                 {request.description}
               </p>
-              
+
               {request.images && request.images.length > 0 && (
                 <div className="mb-2 flex gap-1.5 flex-wrap">
                   {request.images.slice(0, 3).map((image, imgIndex) => {
                     const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-                    const imageUrl = image.startsWith('http') 
-                      ? image 
+                    const imageUrl = image.startsWith('http')
+                      ? image
                       : `${baseUrl}${image}`;
                     return (
                       <div
@@ -207,7 +224,7 @@ const ServiceRequestListPanel = ({
                   )}
                 </div>
               )}
-              
+
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getCategoryColor(request.category)}`}>
                   {request.category}
@@ -221,9 +238,9 @@ const ServiceRequestListPanel = ({
           ))
         )}
       </div>
-      
+
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
@@ -244,8 +261,24 @@ const ServiceRequestListPanel = ({
           </div>
         </div>
       )}
+
+
     </div>
   );
+};
+
+ServiceRequestListPanel.propTypes = {
+  serviceRequests: PropTypes.array.isRequired,
+  searchTerm: PropTypes.string.isRequired,
+  setSearchTerm: PropTypes.func.isRequired,
+  statusFilter: PropTypes.string.isRequired,
+  setStatusFilter: PropTypes.func.isRequired,
+  selectedServiceRequest: PropTypes.object,
+  onServiceRequestClick: PropTypes.func.isRequired,
+  error: PropTypes.string,
+  onBackToDashboard: PropTypes.func,
+  onRefresh: PropTypes.func,
+  onDelete: PropTypes.func
 };
 
 export default ServiceRequestListPanel;

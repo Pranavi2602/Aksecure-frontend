@@ -6,6 +6,7 @@ import { getStatusColor, getStatusBorderColor, getCategoryColor, getStatusIcon }
 import { useInView } from 'react-intersection-observer';
 import { toast } from 'react-toastify';
 import LoadingState from './common/LoadingState';
+import ImageViewer from './common/ImageViewer';
 
 // use imported getStatusColor instead
 
@@ -89,6 +90,27 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     }
   }, [fetchRequests]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectedImage(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  // Scroll lock for image modal
+  useEffect(() => {
+    if (selectedImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedImage]);
+
   if (loading && !isRefreshing) {
     return <LoadingState message="Loading service requests" />;
   }
@@ -111,12 +133,6 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 mb-4">No service requests found</div>
-        <button
-          onClick={() => fetchRequests(false)}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          Refresh
-        </button>
       </div>
     );
   }
@@ -159,11 +175,12 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     }
   };
 
+
   return (
     <div className="space-y-4">
       {requests.map((request, index) => {
         const adminRepliesInfo = getAdminRepliesInfo(request);
-        const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
         const isLastRequest = index === requests.length - 1;
         return (
@@ -175,27 +192,27 @@ const ServiceRequestListUser = ({ onRefresh }) => {
             {/* Status accent line */}
             <div className={`absolute top-0 left-0 bottom-0 w-1 ${request.status === 'New' || request.status === 'Open' ? 'bg-amber-500' : request.status === 'In Progress' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
 
-            <div className="p-6">
+            <div className="p-5">
               <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                  <div className="flex items-center gap-3 mb-1 flex-wrap">
                     <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors leading-tight">
                       {request.title}
                     </h3>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(request.status)}`}>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${getStatusColor(request.status)}`}>
                       {getStatusIcon(request.status)}
                       {request.status}
                     </span>
                     {adminRepliesInfo.hasReplies && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full text-[9px] font-bold uppercase tracking-wider">
                         <MessageSquare className="w-3 h-3" />
                         {adminRepliesInfo.count} {adminRepliesInfo.count === 1 ? 'Reply' : 'Replies'}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-slate-500 font-mono text-uppercase">
+                  <div className="flex items-center gap-4 text-[10px] text-slate-500 font-mono text-uppercase">
                     <span>{request.requestId}</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-[11px]">
                       <Calendar className="w-3 h-3" />
                       {new Date(request.createdAt).toLocaleDateString()}
                     </span>
@@ -209,18 +226,18 @@ const ServiceRequestListUser = ({ onRefresh }) => {
                     setRequestToDelete(request);
                     setShowDeleteModal(true);
                   }}
-                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all border border-transparent hover:border-red-400/20"
+                  className="p-2 text-red-500 hover:bg-red-400/10 rounded-xl transition-all border border-transparent hover:border-red-400/20"
                   title="Delete request"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
 
-              <p className="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
+              <p className="text-slate-400 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
                 {request.description}
               </p>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-900/50 border border-white/5 mb-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 rounded-xl bg-slate-900/40 border border-white/5 mb-5">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</p>
                   <p className={`text-xs font-semibold ${getCategoryColor(request.category)}`}>
@@ -256,14 +273,14 @@ const ServiceRequestListUser = ({ onRefresh }) => {
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">Service Attachments</p>
                   <div className="flex gap-3 flex-wrap">
                     {request.images.map((image, index) => {
-                      const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image}`;
+                      const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
                       return (
                         <div
                           key={index}
                           className="relative group/img cursor-pointer"
                           onClick={() => {
                             const allImageUrls = request.images.map(img =>
-                              img.startsWith('http') ? img : `${baseUrl}${img}`
+                              img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`
                             );
                             setSelectedImage({
                               url: imageUrl,
@@ -326,13 +343,13 @@ const ServiceRequestListUser = ({ onRefresh }) => {
                                 {images.length > 0 && (
                                   <div className="mt-3 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                                     {images.map((image, imgIndex) => {
-                                      const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image}`;
+                                      const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
                                       return (
                                         <div
                                           key={imgIndex}
                                           className="relative group/replyimg cursor-pointer"
                                           onClick={() => {
-                                            const allImageUrls = images.map(img => img.startsWith('http') ? img : `${baseUrl}${img}`);
+                                            const allImageUrls = images.map(img => img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`);
                                             setSelectedImage({ url: imageUrl, index: imgIndex, allImages: allImageUrls });
                                           }}
                                         >
@@ -364,139 +381,85 @@ const ServiceRequestListUser = ({ onRefresh }) => {
       })}
 
       {selectedImage && (
-        <div
-          className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div className="relative w-full h-full flex items-center justify-center">
-            <button
-              onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
-              className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-              aria-label="Close"
-            >
-              <X className="w-6 h-6" />
-            </button>
+        <ImageViewer
+          images={selectedImage.allImages}
+          initialIndex={selectedImage.index}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
 
-            {/* Previous Image Button */}
-            {selectedImage.allImages && selectedImage.allImages.length > 1 && selectedImage.index > 0 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedImage({
-                    ...selectedImage,
-                    index: selectedImage.index - 1,
-                    url: selectedImage.allImages[selectedImage.index - 1]
-                  });
-                }}
-                className="absolute left-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-            )}
-
-            <img
-              src={selectedImage.url || selectedImage}
-              alt="Full size"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-
-            {/* Next Image Button */}
-            {selectedImage.allImages && selectedImage.allImages.length > 1 && selectedImage.index < selectedImage.allImages.length - 1 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedImage({
-                    ...selectedImage,
-                    index: selectedImage.index + 1,
-                    url: selectedImage.allImages[selectedImage.index + 1]
-                  });
-                }}
-                className="absolute right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            )}
-
-            {/* Image Counter */}
-            {selectedImage.allImages && selectedImage.allImages.length > 1 && (
-              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium">
-                {selectedImage.index + 1} / {selectedImage.allImages.length}
-              </div>
-            )}
+      {
+        isRefreshing && (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {isRefreshing && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
-        </div>
-      )}
+      {
+        !hasMore && requests.length > 0 && (
+          <div className="text-center py-4 text-sm text-gray-500">
+            No more requests to load
+          </div>
+        )
+      }
 
-      {!hasMore && requests.length > 0 && (
-        <div className="text-center py-4 text-sm text-gray-500">
-          No more requests to load
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && requestToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-          <div className="bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-white/10 p-8 relative overflow-hidden animate-fade-in-up">
-            <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
-              <Trash2 className="w-32 h-32 text-white" />
-            </div>
-
-            <div className="relative z-10">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shadow-lg shadow-red-500/5">
-                  <Trash2 className="w-6 h-6 text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">Purge Request</h3>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Delete request <span className="font-bold text-slate-300">#{requestToDelete.requestId}</span>
-                  </p>
-                </div>
+      {
+        showDeleteModal && requestToDelete && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
+            <div className="bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-white/10 p-8 relative overflow-hidden animate-scale-in">
+              <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
+                <Trash2 className="w-32 h-32 text-white" />
               </div>
 
-              <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-sm text-red-200/70 mb-8 leading-relaxed">
-                This will permanently remove the service request and all associated history. This operation is irreversible.
-              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shadow-lg shadow-red-500/5">
+                    <Trash2 className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">Purge Request</h3>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Delete request <span className="font-bold text-slate-300">#{requestToDelete.requestId}</span>
+                    </p>
+                  </div>
+                </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setRequestToDelete(null);
-                  }}
-                  className="flex-1 px-6 py-3 rounded-2xl border border-white/5 text-slate-400 font-bold hover:bg-white/5 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteRequest}
-                  disabled={isDeleting}
-                  className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold hover:shadow-lg hover:shadow-red-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Wiping Data...
-                    </>
-                  ) : (
-                    'Purge Request'
-                  )}
-                </button>
+                <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-sm text-red-200/70 mb-8 leading-relaxed">
+                  This will permanently remove the service request and all associated history. This operation is irreversible.
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setRequestToDelete(null);
+                    }}
+                    className="flex-1 px-6 py-3 rounded-2xl border border-white/5 text-slate-400 font-bold hover:bg-white/5 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteRequest}
+                    disabled={isDeleting}
+                    className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold hover:shadow-lg hover:shadow-red-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Wiping Data...
+                      </>
+                    ) : (
+                      'Purge Request'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

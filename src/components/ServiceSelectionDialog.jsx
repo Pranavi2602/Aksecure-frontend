@@ -5,7 +5,7 @@ const ServiceSelectionDialog = ({ isOpen, onClose, onNewService, onQueryRaising,
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300">
-      <div className="glass-card max-w-md w-full rounded-[32px] border border-white/5 p-1 relative overflow-hidden animate-fade-in-up">
+      <div className="glass-card max-w-md w-full rounded-[32px] border border-white/5 p-1 relative overflow-hidden animate-scale-in">
         <div className="bg-slate-900/90 rounded-[28px] overflow-hidden">
           {/* Header */}
           <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between">

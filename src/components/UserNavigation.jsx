@@ -12,7 +12,7 @@ const UserNavigation = () => {
     return (
         <nav className="sticky top-0 z-50 bg-slate-900/50 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-20">
+                <div className="flex justify-between items-center h-16">
 
                     {/* Logo Section */}
                     <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
@@ -56,8 +56,8 @@ const UserNavigation = () => {
                         <button
                             onClick={() => navigate('/profile')}
                             className={`hidden sm:flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all group active:scale-95 ${isActive('/profile')
-                                    ? 'bg-blue-500/10 border-blue-500/20'
-                                    : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60'
+                                ? 'bg-blue-500/10 border-blue-500/20'
+                                : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60'
                                 }`}
                         >
                             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 p-[1px] border border-white/10">

@@ -6,6 +6,7 @@ import { getStatusColor, getStatusBorderColor, getCategoryColor, getStatusIcon }
 import { useInView } from 'react-intersection-observer';
 import { toast } from 'react-toastify';
 import LoadingState from './common/LoadingState';
+import ImageViewer from './common/ImageViewer';
 
 const TicketList = ({ onRefresh }) => {
   const { user } = useAuth();
@@ -91,6 +92,27 @@ const TicketList = ({ onRefresh }) => {
     fetchTickets(false);
   }, [fetchTickets]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectedImage(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  // Scroll lock for image modal
+  useEffect(() => {
+    if (selectedImage) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedImage]);
+
   if (loading && !isRefreshing) {
     return <LoadingState message="Retrieving your tickets" />;
   }
@@ -119,23 +141,6 @@ const TicketList = ({ onRefresh }) => {
             <div>No tickets found</div>
           )}
         </div>
-        <button
-          onClick={() => fetchTickets(false)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </>
-          )}
-        </button>
       </div>
     );
   }
@@ -168,6 +173,7 @@ const TicketList = ({ onRefresh }) => {
     }
   };
 
+
   const getAdminRepliesInfo = (ticket) => {
     if (!ticket.timeline || ticket.timeline.length === 0) {
       return { count: 0, hasReplies: false };
@@ -186,12 +192,6 @@ const TicketList = ({ onRefresh }) => {
       return (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">No tickets found</div>
-          <button
-            onClick={() => fetchTickets(false)}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Refresh
-          </button>
         </div>
       );
     }
@@ -202,6 +202,7 @@ const TicketList = ({ onRefresh }) => {
           const adminRepliesInfo = getAdminRepliesInfo(ticket);
           const isLastTicket = index === tickets.length - 1;
           const adminReplies = ticket.timeline ? ticket.timeline.filter(item => isAdminReply(item)) : [];
+          const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
           return (
             <div
@@ -212,27 +213,27 @@ const TicketList = ({ onRefresh }) => {
               {/* Status accent line */}
               <div className={`absolute top-0 left-0 bottom-0 w-1 ${ticket.status === 'New' || ticket.status === 'Open' ? 'bg-amber-500' : ticket.status === 'In Progress' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
 
-              <div className="p-6">
+              <div className="p-5">
                 <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div className="flex items-center gap-3 mb-1 flex-wrap">
                       <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors leading-tight">
                         {ticket.title}
                       </h3>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusColor(ticket.status)}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${getStatusColor(ticket.status)}`}>
                         {getStatusIcon(ticket.status)}
                         {ticket.status === 'Open' ? 'New' : ticket.status}
                       </span>
                       {adminRepliesInfo.hasReplies && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-violet-500/10 text-violet-400 border border-violet-500/20 rounded-full text-[9px] font-bold uppercase tracking-wider">
                           <MessageSquare className="w-3 h-3" />
                           {adminRepliesInfo.count} {adminRepliesInfo.count === 1 ? 'Reply' : 'Replies'}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-500 font-mono">
+                    <div className="flex items-center gap-4 text-[10px] text-slate-500 font-mono">
                       <span>#{ticket.ticketId}</span>
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-[11px]">
                         <Calendar className="w-3 h-3" />
                         {new Date(ticket.createdAt).toLocaleDateString()}
                       </span>
@@ -246,18 +247,18 @@ const TicketList = ({ onRefresh }) => {
                       setTicketToDelete(ticket);
                       setShowDeleteModal(true);
                     }}
-                    className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all border border-transparent hover:border-red-400/20"
+                    className="p-2 text-red-500 hover:bg-red-400/10 rounded-xl transition-all border border-transparent hover:border-red-400/20"
                     title="Delete ticket"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
 
-                <p className="text-slate-400 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
+                <p className="text-slate-400 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
                   {ticket.description}
                 </p>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-900/50 border border-white/5 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 rounded-xl bg-slate-900/40 border border-white/5 mb-5">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</p>
                     <p className={`text-xs font-semibold ${getCategoryColor(ticket.category)}`}>
@@ -288,31 +289,34 @@ const TicketList = ({ onRefresh }) => {
                   <div className="mb-6">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">Attachments</p>
                     <div className="flex flex-wrap gap-3">
-                      {ticket.images.map((image, imgIndex) => (
-                        <div
-                          key={imgIndex}
-                          className="relative group/img cursor-pointer"
-                          onClick={() => {
-                            const allImageUrls = ticket.images.map(img =>
-                              img.startsWith('http') ? img : `${import.meta.env.VITE_API_URL}${img}`
-                            );
-                            setSelectedImage({
-                              url: image.startsWith('http') ? image : `${import.meta.env.VITE_API_URL}${image}`,
-                              index: imgIndex,
-                              allImages: allImageUrls
-                            });
-                          }}
-                        >
-                          <img
-                            src={image.startsWith('http') ? image : `${import.meta.env.VITE_API_URL}${image}`}
-                            alt={`Attachment ${imgIndex + 1}`}
-                            className="w-24 h-24 object-cover rounded-xl border border-white/10 group-hover/img:border-blue-500/50 transition-all"
-                          />
-                          <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                            <Eye className="w-5 h-5 text-white" />
+                      {ticket.images.map((image, imgIndex) => {
+                        const imageUrl = image.startsWith('http') ? image : `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
+                        return (
+                          <div
+                            key={imgIndex}
+                            className="relative group/img cursor-pointer"
+                            onClick={() => {
+                              const allImageUrls = ticket.images.map(img =>
+                                img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`
+                              );
+                              setSelectedImage({
+                                url: imageUrl,
+                                index: imgIndex,
+                                allImages: allImageUrls
+                              });
+                            }}
+                          >
+                            <img
+                              src={imageUrl}
+                              alt={`Attachment ${imgIndex + 1}`}
+                              className="w-24 h-24 object-cover rounded-xl border border-white/10 group-hover/img:border-blue-500/50 transition-all"
+                            />
+                            <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/img:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                              <Eye className="w-5 h-5 text-white" />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -326,7 +330,7 @@ const TicketList = ({ onRefresh }) => {
                     <div className="space-y-4">
                       {adminReplies.map((item, index) => {
                         const images = item.images || [];
-                        const baseUrl = import.meta.env.VITE_API_URL || '';
+                        const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5000';
 
                         return (
                           <div key={index} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 relative overflow-hidden group/reply">
@@ -359,17 +363,17 @@ const TicketList = ({ onRefresh }) => {
                                         className="relative group/replyimg cursor-pointer"
                                         onClick={() => {
                                           const allImageUrls = images.map(img =>
-                                            img.startsWith('http') ? img : `${baseUrl}${img}`
+                                            img.startsWith('http') ? img : `${baseUrl}${img.startsWith('/') ? '' : '/'}${img}`
                                           );
                                           setSelectedImage({
-                                            url: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`,
+                                            url: imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`,
                                             index: imgIndex,
                                             allImages: allImageUrls
                                           });
                                         }}
                                       >
                                         <img
-                                          src={imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`}
+                                          src={imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`}
                                           alt={`Admin attachment ${imgIndex + 1}`}
                                           className="w-full h-20 object-cover rounded-xl border border-white/10 group-hover/replyimg:border-violet-500/50 transition-all"
                                         />
@@ -391,85 +395,11 @@ const TicketList = ({ onRefresh }) => {
               </div>
             </div>
           );
-        })}
-      </div>
+        })
+        }
+      </div >
     );
   }
-
-  const renderImageModal = () => {
-    if (!selectedImage) return null;
-
-    return (
-      <div
-        className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-4"
-        onClick={() => setSelectedImage(null)}
-      >
-        <div className="relative w-full h-full flex items-center justify-center">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedImage(null);
-            }}
-            className="absolute top-4 right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6" />
-          </button>
-
-          {/* Previous Image Button */}
-          {selectedImage.allImages && selectedImage.allImages.length > 1 && selectedImage.index > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedImage({
-                  ...selectedImage,
-                  index: selectedImage.index - 1,
-                  url: selectedImage.allImages[selectedImage.index - 1]
-                });
-              }}
-              className="absolute left-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-              aria-label="Previous image"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          )}
-
-          {/* Main Image */}
-          <img
-            src={typeof selectedImage === 'string' ? selectedImage : selectedImage.url}
-            alt="Full size"
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-
-          {/* Next Image Button */}
-          {selectedImage.allImages && selectedImage.allImages.length > 1 && selectedImage.index < selectedImage.allImages.length - 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedImage({
-                  ...selectedImage,
-                  index: selectedImage.index + 1,
-                  url: selectedImage.allImages[selectedImage.index + 1]
-                });
-              }}
-              className="absolute right-4 z-10 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-sm"
-              aria-label="Next image"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          )}
-
-          {/* Image Counter */}
-          {selectedImage.allImages && selectedImage.allImages.length > 1 && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-white text-sm font-medium">
-              {selectedImage.index + 1} / {selectedImage.allImages.length}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // Main render
   if (loading && !isRefreshing) {
@@ -499,23 +429,6 @@ const TicketList = ({ onRefresh }) => {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 mb-4">No tickets found</div>
-        <button
-          onClick={() => fetchTickets(false)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </>
-          )}
-        </button>
       </div>
     );
   }
@@ -527,23 +440,21 @@ const TicketList = ({ onRefresh }) => {
           <h2 className="text-2xl font-bold text-white tracking-tight">Active Tickets</h2>
           <p className="text-sm text-slate-500 mt-1">Track the status and progress of your service requests</p>
         </div>
-        <button
-          onClick={() => fetchTickets(false)}
-          className="p-2 bg-white/5 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition-all border border-white/5 hover:border-white/10 shadow-lg"
-          disabled={isRefreshing}
-          title="Refresh List"
-        >
-          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
       {renderTicketList()}
-      {renderImageModal()}
+      {selectedImage && (
+        <ImageViewer
+          images={selectedImage.allImages}
+          initialIndex={selectedImage.index}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && ticketToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-          <div className="bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-white/10 p-8 relative overflow-hidden animate-fade-in-up">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-white/10 p-8 relative overflow-hidden animate-scale-in">
             <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
               <Trash2 className="w-32 h-32 text-white" />
             </div>

@@ -6,7 +6,7 @@ import ServiceRequestForm from './ServiceRequestForm';
 import ServiceSelectionDialog from './ServiceSelectionDialog';
 import AdminReplies from './AdminReplies';
 import UserNavigation from './UserNavigation';
-import { Shield, Sparkles, ArrowRight, Video, Flame, Bell, Zap, Droplets, Wind } from 'lucide-react';
+import { Shield, Sparkles, ArrowRight, Video, Flame, Bell, Zap, Droplets, Wind, Activity, Clock, Headphones, FileText, Settings, HelpCircle } from 'lucide-react';
 
 const categories = [
   { name: 'CCTV', icon: Video, color: 'blue' },
@@ -32,6 +32,18 @@ const UserDashboard = () => {
       navigate('/admin');
     }
   }, [user, navigate]);
+
+  // Disable background scroll when modal or form is open
+  useEffect(() => {
+    if (showServiceDialog || showTicketForm || showServiceRequestForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showServiceDialog, showTicketForm, showServiceRequestForm]);
 
   const handleCategoryClick = (categoryName) => {
     setSelectedCategory(categoryName);
@@ -73,30 +85,30 @@ const UserDashboard = () => {
 
   if (showTicketForm) {
     return (
-      <div className="min-h-screen bg-slate-950">
+      <div className="h-screen bg-slate-950 flex flex-col overflow-hidden">
         <UserNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-y-auto">
           <TicketForm
             category={selectedCategory}
             onSuccess={handleTicketCreated}
             onCancel={handleCancel}
           />
-        </div>
+        </main>
       </div>
     );
   }
 
   if (showServiceRequestForm) {
     return (
-      <div className="min-h-screen bg-slate-950">
+      <div className="h-screen bg-slate-950 flex flex-col overflow-hidden">
         <UserNavigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-y-auto">
           <ServiceRequestForm
             category={selectedCategory}
             onSuccess={handleServiceRequestCreated}
             onCancel={handleCancel}
           />
-        </div>
+        </main>
       </div>
     );
   }
@@ -111,103 +123,164 @@ const UserDashboard = () => {
 
       <UserNavigation />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
-        {/* Header Hero Section */}
-        <header className="relative group p-0.5 rounded-[32px] overflow-hidden transition-all duration-500 hover:shadow-[0_0_40px_rgba(59,130,246,0.08)] accelerate-gpu">
-          {/* Glass background */}
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-[32px]"></div>
+      <div className="page-transition">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 relative z-10">
+          {/* Header Hero Section */}
+          <header className="relative group p-0.5 rounded-[24px] overflow-hidden transition-all duration-500 hover:shadow-[0_0_50px_rgba(59,130,246,0.12)] accelerate-gpu">
+            {/* Animated gradient border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-blue-500/20 animate-gradient-slow opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
 
-          <div className="relative z-10 bg-slate-950/20 rounded-[28px] p-6 lg:p-8 overflow-hidden">
-            {/* Background decor icons */}
-            <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-[0.02] pointer-events-none group-hover:opacity-[0.04] transition-opacity duration-700 accelerate-gpu">
-              <Shield className="w-48 h-48 lg:w-72 lg:h-72 text-white stroke-[0.5px]" />
-            </div>
+            {/* Glass background */}
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-[24px]"></div>
 
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-4 animate-fade-in accelerate-gpu">
-                <Sparkles className="w-3 h-3" />
-                <span>Enterprise Dashboard</span>
+            <div className="relative z-10 bg-slate-950/30 rounded-[20px] p-4 lg:p-6 overflow-hidden">
+              {/* Background decor icons */}
+              <div className="absolute -top-10 -right-10 opacity-[0.03] pointer-events-none group-hover:opacity-[0.05] transition-all duration-1000 group-hover:rotate-12 group-hover:scale-110">
+                <Shield className="w-48 h-48 lg:w-64 lg:h-64 text-white stroke-[0.5px]" />
               </div>
 
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 tracking-tight leading-tight">
-                Welcome back,<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-violet-400 to-blue-400 bg-[length:200%_auto] animate-gradient accelerate-gpu">
-                  {user?.name || 'Partner'}
-                </span>
-                <span className="inline-block ml-3 animate-bounce-slow text-2xl lg:text-4xl">👋</span>
-              </h1>
-
-              <p className="text-slate-400 max-w-lg text-base lg:text-lg leading-relaxed font-medium">
-                Manage your installation and service requests for <span className="text-white font-bold italic">CCTV</span>, <span className="text-white font-bold italic">Fire Alarm</span>, and <span className="text-white font-bold italic">Security</span> systems.
-              </p>
-            </div>
-          </div>
-
-          {/* Bottom highlight effect */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
-        </header>
-
-        {/* Service Categories */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-sm font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-              Service Categories
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {categories.map((category, index) => (
-              <button
-                key={category.name}
-                type="button"
-                onClick={() => handleCategoryClick(category.name)}
-                className="group relative overflow-hidden rounded-[32px] border border-white/5 bg-slate-900/40 p-1 hover:bg-slate-900/60 transition-all duration-500 hover:-translate-y-1 shadow-2xl hover:shadow-blue-500/10"
-              >
-                <div className="bg-slate-950/20 rounded-[28px] p-6 lg:p-8 h-full flex flex-col transition-all duration-500 group-hover:bg-slate-950/40 border border-transparent group-hover:border-white/5">
-                  <div className="flex items-start justify-between gap-4 mb-6">
-                    <div className={`h-14 w-14 rounded-2xl bg-${category.color}-500/10 border border-${category.color}-500/20 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]`}>
-                      <category.icon className={`w-7 h-7 text-${category.color}-400`} />
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="max-w-xl">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-bold uppercase tracking-[0.2em] animate-fade-in">
+                      <Sparkles className="w-2.5 h-2.5" />
+                      <span>Enterprise</span>
                     </div>
-                    <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">
-                      <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-white/20">
-                        <ArrowRight className="w-5 h-5 text-white" />
-                      </div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider animate-pulse-slow">
+                      <Activity className="w-2.5 h-2.5" />
+                      <span>Normal</span>
                     </div>
                   </div>
 
-                  <div className="mt-auto">
-                    <h3 className="text-xl font-bold text-white mb-2 transition-colors tracking-tight">
-                      {category.name}
-                    </h3>
-                    <p className="text-sm text-slate-500 group-hover:text-slate-400 leading-relaxed font-medium">
-                      Manage or request installations for <span className={`text-${category.color}-400/80`}>{category.name}</span> systems.
-                    </p>
+                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight leading-tight flex items-center flex-wrap gap-x-2">
+                    Welcome back,
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-violet-400 to-blue-400 bg-[length:200%_auto] animate-gradient whitespace-nowrap">
+                      {user?.name || 'Partner'}
+                    </span>
+                    <span className="inline-block animate-bounce-slow text-xl lg:text-2xl">👋</span>
+                  </h1>
+
+                  <p className="text-slate-400 max-w-lg text-xs lg:text-sm leading-relaxed font-medium mb-4">
+                    Ready to manage your <span className="text-white font-bold italic">CCTV</span>, <span className="text-white font-bold italic">Fire Alarm</span>, and <span className="text-white font-bold italic">Security</span> systems?
+                  </p>
+
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-blue-500/50" />
+                    <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
                   </div>
                 </div>
 
-                {/* Decorative background element */}
-                <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-${category.color}-500/5 blur-[50px] rounded-full group-hover:bg-${category.color}-500/10 transition-all duration-500`} />
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Admin Replies */}
-        <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-sm font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-              Recent Updates
-            </h2>
-          </div>
-          <div className="glass-card rounded-[32px] overflow-hidden p-1 border border-white/5">
-            <div className="bg-slate-950/40 rounded-[28px] p-2 lg:p-4">
-              <AdminReplies key={refreshKey} refreshKey={refreshKey} />
+                {/* Hero Illustration */}
+                <div className="hidden md:block relative mr-4">
+                  <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full animate-pulse-slow"></div>
+                  <img
+                    src="/security_hero_illustration_1768310383677.png"
+                    alt="Security Shield"
+                    className="w-32 h-32 lg:w-48 lg:h-48 object-contain relative z-10 animate-float-slow drop-shadow-[0_20px_50px_rgba(59,130,246,0.3)]"
+                  />
+                  {/* Floating micro-elements */}
+                  <div className="absolute -top-4 -right-4 w-12 h-12 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-center animate-bounce-slow delay-100 z-20">
+                    <Shield className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div className="absolute -bottom-2 -left-2 w-10 h-10 bg-white/5 backdrop-blur-md rounded-lg border border-white/10 flex items-center justify-center animate-bounce-slow delay-300 z-20">
+                    <Activity className="w-5 h-5 text-emerald-400" />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
+
+            {/* Bottom highlight effect */}
+            <div className="absolute bottom-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent"></div>
+          </header>
+
+          {/* Service Categories */}
+          <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Service Categories
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category, index) => (
+                <button
+                  key={category.name}
+                  type="button"
+                  onClick={() => handleCategoryClick(category.name)}
+                  className="group relative overflow-hidden rounded-[20px] border border-white/5 bg-slate-900/40 p-0.5 hover:bg-slate-900/60 transition-all duration-500 hover:-translate-y-1 shadow-2xl hover:shadow-blue-500/10"
+                >
+                  <div className="bg-slate-950/20 rounded-[18px] p-4 lg:p-5 h-full flex flex-col items-center text-center transition-all duration-500 group-hover:bg-slate-950/40 border border-transparent group-hover:border-white/5 relative z-10">
+                    <div className="relative mb-3">
+                      <div className={`h-10 w-10 rounded-xl bg-${category.color}-500/10 border border-${category.color}-500/20 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]`}>
+                        <category.icon className={`w-4.5 h-4.5 text-${category.color}-400`} />
+                      </div>
+                      {(index === 0 || index === 3) && (
+                        <div className="absolute -top-2 -right-6 px-2 py-0.5 rounded-full bg-blue-500 text-[8px] font-black text-white uppercase tracking-tighter animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]">
+                          New
+                        </div>
+                      )}
+                      <div className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-white/20">
+                          <ArrowRight className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto w-full">
+                      <h3 className="text-xl font-bold text-white mb-1 transition-colors tracking-tight">
+                        {category.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 group-hover:text-slate-400 leading-relaxed font-medium">
+                        Manage or request installations for <span className={`text-${category.color}-400/80`}>{category.name}</span> systems.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Decorative background element */}
+                  <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-${category.color}-500/5 blur-[50px] rounded-full group-hover:bg-${category.color}-500/10 transition-all duration-500`} />
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Admin Replies */}
+          <section className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-400 tracking-wider uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+                Recent Updates
+              </h2>
+            </div>
+            <div className="glass-card rounded-[32px] overflow-hidden p-1 border border-white/5">
+              <div className="bg-slate-950/40 rounded-[28px] p-2 lg:p-4">
+                <AdminReplies key={refreshKey} refreshKey={refreshKey} />
+              </div>
+            </div>
+          </section>
+          {/* Quick Help & Resources */}
+          <section className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { icon: Headphones, label: 'Support', desc: 'Instant help' },
+                { icon: FileText, label: 'Guide', desc: 'User manual' },
+                { icon: Settings, label: 'Settings', desc: 'Preferences' },
+                { icon: HelpCircle, label: 'FAQs', desc: 'Common issues' }
+              ].map((item, i) => (
+                <div key={i} className="bg-slate-900/40 border border-white/5 p-3 rounded-2xl flex items-center gap-3 hover:bg-slate-900/60 transition-colors cursor-pointer group">
+                  <div className="p-2 rounded-xl bg-slate-950/40 border border-white/5 group-hover:border-blue-500/20 group-hover:text-blue-400 transition-colors text-slate-400">
+                    <item.icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-white tracking-tight">{item.label}</p>
+                    <p className="text-[9px] text-slate-500 font-medium">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
 
       {/* Service Selection Dialog */}
       <ServiceSelectionDialog

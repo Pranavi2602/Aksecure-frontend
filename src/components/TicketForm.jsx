@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Upload, X, Image as ImageIcon, ArrowLeft, Calendar, Clock } from 'lucide-react';
 import LoadingState from './common/LoadingState';
 import SuccessState from './common/SuccessState';
+import { compressImage } from '../utils/imageUtils';
 
 const categories = ['CCTV', 'Fire Alarm', 'Security Alarm', 'Electrical', 'Plumbing', 'Air Conditioning'];
 const timeSlotOptions = [
@@ -106,6 +107,12 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
     }
 
     try {
+      setLoading(true);
+      setError('');
+
+      // Update loading state message if images exist
+      const loadingMessage = images.length > 0 ? 'Compressing & Submitting...' : 'Submitting Ticket...';
+
       const payload = new FormData();
       payload.append('category', formData.category);
       payload.append('title', formData.title.trim());
@@ -116,22 +123,23 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
         payload.append('preferredVisitAt', new Date(preferredDateTime).toISOString());
       }
 
-      images.forEach((image) => {
-        payload.append('images', image);
-      });
+      // Compress and append images
+      for (const image of images) {
+        try {
+          const compressed = await compressImage(image);
+          payload.append('images', compressed);
+        } catch (e) {
+          console.error('Compression failed, using original', e);
+          payload.append('images', image);
+        }
+      }
 
-      // Start the API call but don't wait for it to complete
-      const submitPromise = api.post('/tickets', payload, {
+      // Submit the ticket and wait for response
+      await api.post('/tickets', payload, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      // Wait for 2 seconds minimum, then show success
-      await Promise.all([
-        submitPromise,
-        new Promise(resolve => setTimeout(resolve, 2000))
-      ]);
 
       setFormData({
         category: category || '',
@@ -161,7 +169,7 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
 
 
   return (
-    <div className="min-h-screen py-8 px-4 relative overflow-hidden">
+    <div className="w-full relative overflow-hidden page-transition">
       {showSuccess && (
         <SuccessState
           title="Ticket Raised!"
@@ -169,14 +177,14 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
           onComplete={onSuccess}
         />
       )}
-      {loading && <LoadingState message="Submitting Ticket..." fullPage={true} />}
+      {loading && <LoadingState message={images.length > 0 ? "Optimizing & Sending..." : "Submitting Ticket..."} fullPage={true} />}
       {/* Background gradients */}
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] rounded-full bg-blue-600/5 blur-[120px]" />
         <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-violet-600/5 blur-[120px]" />
       </div>
 
-      <div className="max-w-3xl mx-auto relative z-10">
+      <div className="max-w-form mx-auto relative z-10 animate-scale-in">
         <button
           type="button"
           onClick={onCancel}
@@ -189,7 +197,7 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
         </button>
 
         <div className="glass-card rounded-[32px] border border-white/5 p-1 relative overflow-hidden group">
-          <div className="bg-slate-950/20 rounded-[28px] p-8 lg:p-10">
+          <div className="bg-slate-950/20 rounded-[28px] p-6 lg:p-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <ImageIcon className="w-7 h-7 text-white" />
@@ -216,7 +224,7 @@ const TicketForm = ({ category, onSuccess, onCancel }) => {
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
-                      className="w-full px-5 py-4 bg-slate-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all appearance-none cursor-pointer disabled:opacity-50"
+                      className="w-full compact-input bg-slate-900/50 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all appearance-none cursor-pointer disabled:opacity-50"
                       required
                       disabled={Boolean(category)}
                     >

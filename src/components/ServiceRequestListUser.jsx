@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { X, Eye, Loader2, ChevronLeft, ChevronRight, Trash2, Calendar, Clock, MessageSquare, Tag } from 'lucide-react';
@@ -101,7 +102,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
 
   // Scroll lock for image modal
   useEffect(() => {
-    if (selectedImage) {
+    if (selectedImage || showDeleteModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -109,7 +110,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [selectedImage]);
+  }, [selectedImage, showDeleteModal]);
 
   if (loading && !isRefreshing) {
     return <LoadingState message="Loading service requests" />;
@@ -405,7 +406,7 @@ const ServiceRequestListUser = ({ onRefresh }) => {
       }
 
       {
-        showDeleteModal && requestToDelete && (
+        showDeleteModal && requestToDelete && createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
             <div className="bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full border border-white/10 p-8 relative overflow-hidden animate-scale-in">
               <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none">
@@ -456,7 +457,8 @@ const ServiceRequestListUser = ({ onRefresh }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )
       }
     </div >
